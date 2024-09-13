@@ -1,5 +1,6 @@
 """Web scraper module"""
 
+import json
 import re
 
 from selenium import webdriver
@@ -110,15 +111,18 @@ def main():
     driver = create_driver()
     driver.get(ROOT_URL)
     navigate_to_auction_page(driver)
-    driver.implicitly_wait(3)
+    driver.implicitly_wait(5)
     navigate_by_search_term(driver, "chair")
+    driver.implicitly_wait(5)
     # navigate_by_category(driver, TOP_LEVEL_CATEGORIES[3])
     lot_details = get_page_listings(driver)
-    for name, links in lot_details.items():
-        print(f"Name: {name}")
-        for link in links:
-            print(f"\t{link}")
+    # for name, links in lot_details.items():
+    #     print(f"Name: {name}")
+    #     for link in links:
+    #         print(f"\t{link}")
     driver.quit()
+    with open("lot_details.json", "w", encoding='utf-8') as json_file:
+        json.dump(lot_details, json_file, indent=4)
 
 
 if __name__ == "__main__":
