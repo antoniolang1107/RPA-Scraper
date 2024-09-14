@@ -111,6 +111,12 @@ def get_listing_name(listing_element) -> str:  # webelement
     return lot_title
 
 
+def export_listings(listing_details: dict, fname: str = "lot_details.json") -> None:
+    """Exports listings details to JSON file"""
+    with open(fname, "w", encoding="utf-8") as json_file:
+        json.dump(listing_details, json_file, indent=4)
+
+
 def main():
     """Runs web session"""
     driver = create_driver()
@@ -121,13 +127,8 @@ def main():
     navigate_by_category(driver, TOP_LEVEL_CATEGORIES[4])
     driver.implicitly_wait(5)
     lot_details = get_page_listings(driver)
-    # for name, links in lot_details.items():
-    #     print(f"Name: {name}")
-    #     for link in links:
-    #         print(f"\t{link}")
     driver.quit()
-    with open("lot_details.json", "w", encoding="utf-8") as json_file:
-        json.dump(lot_details, json_file, indent=4)
+    export_listings(lot_details)
 
 
 if __name__ == "__main__":
