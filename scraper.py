@@ -61,16 +61,15 @@ def dismiss_popup(driver: webdriver) -> None:
         By.CSS_SELECTOR, f"button[class='{DISMISS_BUTTON_CLASS}']"
     )
     try:
-        button_element = WebDriverWait(driver, 10).until(
+        driver.implicitly_wait(5)
+        WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable(button_element)
-        )
+        ).click()
     except ElementNotInteractableException:
         driver.implicitly_wait(5)
         WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable(button_element)
         ).click()
-    finally:
-        button_element.click()
 
 
 def navigate_to_auction_page(driver: webdriver) -> None:
@@ -101,6 +100,8 @@ def navigate_by_category(driver: webdriver, category: str) -> None:
     select_element = driver.find_element(By.ID, CATEGORY_ID)
     select: Select = Select(select_element)
     category_index = get_dropdown_index(select.options, category)
+    if category_index == -1:
+        raise ValueError("Could not find category in list")
     select.select_by_value(f"{category_index}: Object")
 
 
@@ -112,7 +113,11 @@ def get_dropdown_index(dropdown_options: list, category: str) -> int:
         re.sub(r"\d", "", option.text.replace(" (", "").replace(")", ""))
         for option in dropdown_options
     ]
-    return top_level_dropdown_options.index(category)
+    try:
+        index: int = top_level_dropdown_options.index(category)
+        return index
+    except ValueError:
+        return -1
 
 
 def create_driver() -> webdriver:
@@ -181,6 +186,8 @@ def get_categoric_listings(driver: webdriver, categories: list[str]) -> dict:
         except ElementClickInterceptedException:
             dismiss_popup(driver)
             navigate_by_category(driver, category)
+        except ValueError:
+            continue
         driver.implicitly_wait(5)
         categoric_listings[category] = get_page_listings(driver)
     return categoric_listings
