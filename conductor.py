@@ -12,7 +12,6 @@ job_config_fname: str = os.environ["CONFIG_FNAME"]
 
 if __name__ == "__main__":
     job_results: dict = run_job(read_config(job_config_fname))
-
     email_service = gmail_authenticate()
     html_message: str = generate_message_html(job_results)
-    send_message(email_service, receiver_email, "Test Subject", html_message)
+    send_message(email_service, receiver_email, "RPA Links", html_message, "html")
