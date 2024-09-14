@@ -8,12 +8,12 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions
-
-# TODO add same-name listing collation
 
 ROOT_URL = "https://publicauctionreno.hibid.com/"
+
+LOT_CLASS = (
+    "lot-number-lead lot-link lot-title-ellipsis lot-preview-link link mb-1 ng-star-inserted"
+)
 
 TOP_LEVEL_CATEGORIES = [
     "Antiques & Collectables",
@@ -67,9 +67,9 @@ def get_dropdown_index(dropdown_options: list, category: str) -> int:
     # TODO clean string parse implementation
     # remove ' (count)' pattern
     top_level_dropdown_options = [
-        re.sub(r"\d", "", str(option).replace(" (", "").replace( ")", ""))
+        re.sub(r"\d", "", str(option).replace(" (", "").replace(")", ""))
         for option in dropdown_options
-    ] # try element.text for matching
+    ]  # try element.text for matching
     print(top_level_dropdown_options)
     return top_level_dropdown_options.index(category)
 
@@ -81,30 +81,35 @@ def create_driver() -> webdriver:
     driver = webdriver.Firefox(options=driver_options)
     return driver
 
+
 def get_page_listings(driver: webdriver) -> dict:
     """Returns list of auction listings"""
+    print(driver.current_url)
+    driver.get(driver.current_url)
+    driver.implicitly_wait(5)
     lots_dict = {}
-    LOT_CLASS = "lot-number-lead lot-link lot-title-ellipsis lot-preview-link link mb-1 ng-star-inserted"
     lots = driver.find_elements(By.CSS_SELECTOR, f"a[class='{LOT_CLASS}']")
-    # hrefs: list = [lot.get_attribute('href') for lot in lots]
     for lot_element in lots:
         lot_name = get_listing_name(lot_element)
         lot_link = get_listing_link(lot_element)
-        if lot_name in lots_dict.keys():
+        if lot_name in lots_dict:
             lots_dict[lot_name].append(lot_link)
         else:
             lots_dict[lot_name] = [lot_link]
     return lots_dict
 
+
 def get_listing_link(listing_element) -> str:
     """Retrieves href value from anchor element"""
-    return listing_element.get_attribute('href')
+    return listing_element.get_attribute("href")
 
-def get_listing_name(listing_element) -> str: # webelement
+
+def get_listing_name(listing_element) -> str:  # webelement
     """Extracts listing name from parent element"""
     header_element = listing_element.find_element(By.XPATH, "h2")
     lot_title: str = header_element.get_attribute("innerHTML")
     return lot_title
+
 
 def main():
     """Runs web session"""
@@ -121,7 +126,7 @@ def main():
     #     for link in links:
     #         print(f"\t{link}")
     driver.quit()
-    with open("lot_details.json", "w", encoding='utf-8') as json_file:
+    with open("lot_details.json", "w", encoding="utf-8") as json_file:
         json.dump(lot_details, json_file, indent=4)
 
 
