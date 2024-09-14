@@ -2,20 +2,27 @@
 
 import json
 import re
+import time
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.webdriver.support.select import Select
 
 ROOT_URL = "https://publicauctionreno.hibid.com/"
 
-LOT_CLASS = (
+CATEGORY_ID: str = "auction-search-group"
+DISMISS_BUTTON_CLASS: str = "btn btn-secondary ng-star-inserted"
+LOT_CLASS: str = (
     "lot-number-lead lot-link lot-title-ellipsis lot-preview-link link mb-1 ng-star-inserted"
 )
+SEARCH_XPATH: str = (
+    "/html/body/app-root/div[1]/main/div/div/app-catalog/div/div[1]/app-auction-search-private/div/div[1]/div/input"
+)
 
-TOP_LEVEL_CATEGORIES = [
+TOP_LEVEL_CATEGORIES: list[str] = [
     "All Categories",
     "Antiques & Collectables",
     "Business & Industrial",
@@ -31,6 +38,24 @@ TOP_LEVEL_CATEGORIES = [
     "Toys",
 ]
 
+JOB_DICT = {
+    "keywords": [
+        'chair',
+        'chromebook',
+    ],
+    "categories": [
+        TOP_LEVEL_CATEGORIES[4],
+        TOP_LEVEL_CATEGORIES[3],
+    ],
+}
+
+
+def dismiss_popup(driver: webdriver) -> None:
+    """Clicks popup to dismiss"""
+    button_element = driver.find_element(By.CSS_SELECTOR, f"button[class='{DISMISS_BUTTON_CLASS}']")
+    # driver.find_elements(By.CSS_SELECTOR, f"a[class='{LOT_CLASS}']")
+    button_element.click()
+
 
 def navigate_to_auction_page(driver: webdriver) -> None:
     """Redirects driver to auction main page from home page"""
@@ -44,19 +69,15 @@ def navigate_to_auction_page(driver: webdriver) -> None:
 
 def navigate_by_search_term(driver: webdriver, search_term: str) -> None:
     """Redirects driver to keyword results page"""
-    driver.implicitly_wait(2)
-    search_xpath: str = (
-        "/html/body/app-root/div[1]/main/div/div/app-catalog/div/div[1]/app-auction-search-private/div/div[1]/div/input"
-    )
-    input_element = driver.find_element(By.XPATH, search_xpath)
+    driver.implicitly_wait(5)
+    input_element = driver.find_element(By.XPATH, SEARCH_XPATH)
     input_element.send_keys(search_term)
     input_element.send_keys(Keys.ENTER)
 
 
 def navigate_by_category(driver: webdriver, category: str) -> None:
     """Redirects driver to category page"""
-    category_id: str = "auction-search-group"
-    select_element = driver.find_element(By.ID, category_id)
+    select_element = driver.find_element(By.ID, CATEGORY_ID)
     select: Select = Select(select_element)
     category_index = get_dropdown_index(select.options, category)
     select.select_by_value(f"{category_index}: Object")
@@ -84,7 +105,6 @@ def create_driver() -> webdriver:
 
 def get_page_listings(driver: webdriver) -> dict:
     """Returns list of auction listings"""
-    print(driver.current_url)
     driver.get(driver.current_url)
     driver.implicitly_wait(5)
     lots_dict = {}
@@ -117,16 +137,46 @@ def export_listings(listing_details: dict, fname: str = "lot_details.json") -> N
         json.dump(listing_details, json_file, indent=4)
 
 
+def get_keyword_listings(driver: webdriver, keywords: list[str]) -> dict:
+    """Gets all listings by keyword"""
+    keyword_listings: dict[dict] = {}
+    for keyword in keywords:
+        try:
+            navigate_by_search_term(driver, keyword)
+        except ElementClickInterceptedException:
+            dismiss_popup(driver)
+            navigate_by_search_term(driver, keyword)
+        driver.implicitly_wait(5)
+        keyword_listings[keyword] = get_page_listings(driver)
+    return keyword_listings
+
+
+def get_categoric_listings(driver: webdriver, categories: list[str]) -> dict:
+    """Gets all listings by category"""
+    categoric_listings: dict[dict] = {}
+    for category in categories:
+        try:
+            navigate_by_category(driver, category)
+        except ElementClickInterceptedException:
+            dismiss_popup(driver)
+            navigate_by_category(driver, category)
+        driver.implicitly_wait(5)
+        categoric_listings[category] = get_page_listings(driver)
+    return categoric_listings
+
+
 def main():
     """Runs web session"""
     driver = create_driver()
     driver.get(ROOT_URL)
     navigate_to_auction_page(driver)
     driver.implicitly_wait(5)
+    # lot_details = get_categoric_listings(driver, JOB_DICT["categories"])
+    lot_details = get_keyword_listings(driver, JOB_DICT['keywords'])
     # navigate_by_search_term(driver, "chair")
-    navigate_by_category(driver, TOP_LEVEL_CATEGORIES[4])
-    driver.implicitly_wait(5)
-    lot_details = get_page_listings(driver)
+    # navigate_by_category(driver, TOP_LEVEL_CATEGORIES[9])
+    # driver.implicitly_wait(5)
+    # lot_details = get_page_listings(driver)
     driver.quit()
     export_listings(lot_details)
 
