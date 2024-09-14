@@ -8,10 +8,21 @@ from scraper import run_job, read_config
 
 load_dotenv()
 receiver_email: str = os.environ["RECEIVER_ADDRESS"]
-job_config_fname: str = os.environ["CONFIG_FNAME"]
+conductor_config_fname: str = os.environ["CONDUCTOR_CONFIG_FNAME"]
+
+def run_jobs(jobs_config: dict) -> None:
+    """Runs set of jobs"""
+    email_service = gmail_authenticate()
+    for job in jobs_config.values():
+        try:
+            job_recipient: str = job["job_recipient_address"]
+            job_config_fname: str = job["job_config_fname"]
+            job_results: dict = run_job(read_config(job_config_fname))
+            html_message: str = generate_message_html(job_results)
+            send_message(email_service, job_recipient, "RPA Links", html_message, "html")
+        except OSError:
+            print("Could not find job file")
 
 if __name__ == "__main__":
-    job_results: dict = run_job(read_config(job_config_fname))
-    email_service = gmail_authenticate()
-    html_message: str = generate_message_html(job_results)
-    send_message(email_service, receiver_email, "RPA Links", html_message, "html")
+    conductor_config: dict = read_config(conductor_config_fname)
+    run_jobs(conductor_config)
