@@ -2,7 +2,6 @@
 
 import json
 import re
-import time
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
@@ -78,9 +77,9 @@ def navigate_to_auction_page(driver: webdriver) -> None:
 
 def navigate_by_search_term(driver: webdriver, search_term: str) -> None:
     """Redirects driver to keyword results page"""
-    # TODO reset input field before input
     driver.implicitly_wait(5)
     input_element = driver.find_element(By.XPATH, SEARCH_XPATH)
+    input_element.clear()
     input_element.send_keys(search_term)
     input_element.send_keys(Keys.ENTER)
 
@@ -180,6 +179,7 @@ def get_listings_by_job(
 ) -> dict[str, dict[str, list[str]]]:
     """Gets all listings by configuration in the job"""
     all_listings: dict = {}
+    navigate_to_auction_page(driver)
     all_listings |= get_categoric_listings(driver, job_config["categories"])
     navigate_to_auction_page(driver)
     all_listings |= get_keyword_listings(driver, job_config["keywords"])
@@ -189,15 +189,7 @@ def get_listings_by_job(
 def main():
     """Runs web session"""
     driver = create_driver()
-    navigate_to_auction_page(driver)
     lot_details: dict = get_listings_by_job(driver, JOB_DICT)
-    # driver.implicitly_wait(5)
-    # lot_details = get_categoric_listings(driver, JOB_DICT["categories"])
-    # lot_details = get_keyword_listings(driver, JOB_DICT['keywords'])
-    # navigate_by_search_term(driver, "chair")
-    # navigate_by_category(driver, TOP_LEVEL_CATEGORIES[9])
-    # driver.implicitly_wait(5)
-    # lot_details = get_page_listings(driver)
     driver.quit()
     export_listings(lot_details)
 
