@@ -114,6 +114,7 @@ def create_driver() -> webdriver:
 
 def get_page_listings(driver: webdriver) -> dict:
     """Returns list of auction listings"""
+    # TODO recursively iterate over pages as available
     driver.get(driver.current_url)
     driver.implicitly_wait(5)
     lots_dict = {}
@@ -192,6 +193,14 @@ def read_config(fname: str) -> dict:
         return json.load(json_file)
 
 
+def run_job(job) -> dict:
+    """Abtraction to run web scrape job"""
+    job_driver: webdriver = create_driver()
+    lot_details: dict = get_listings_by_job(job_driver, job)
+    job_driver.quit()
+    return lot_details
+
+
 def main():
     """Runs web session"""
     job_config: dict
@@ -204,9 +213,7 @@ def main():
     else:
         print("Using file constant dict")
         job_config = JOB_DICT
-    driver: webdriver = create_driver()
-    lot_details: dict = get_listings_by_job(driver, job_config)
-    driver.quit()
+    lot_details: dict = run_job(job_config)
     export_listings(lot_details)
 
 
