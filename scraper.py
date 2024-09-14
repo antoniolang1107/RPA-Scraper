@@ -9,7 +9,9 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT_URL = "https://publicauctionreno.hibid.com/"
 
@@ -40,8 +42,8 @@ TOP_LEVEL_CATEGORIES: list[str] = [
 
 JOB_DICT = {
     "keywords": [
-        'chair',
-        'chromebook',
+        "chair",
+        "chromebook",
     ],
     "categories": [
         TOP_LEVEL_CATEGORIES[4],
@@ -52,8 +54,11 @@ JOB_DICT = {
 
 def dismiss_popup(driver: webdriver) -> None:
     """Clicks popup to dismiss"""
-    button_element = driver.find_element(By.CSS_SELECTOR, f"button[class='{DISMISS_BUTTON_CLASS}']")
-    # driver.find_elements(By.CSS_SELECTOR, f"a[class='{LOT_CLASS}']")
+    button_element = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, f"button[class='{DISMISS_BUTTON_CLASS}']")
+        )
+    )
     button_element.click()
 
 
@@ -64,11 +69,16 @@ def navigate_to_auction_page(driver: webdriver) -> None:
     button_element = driver.find_element(
         By.XPATH, '//*[@id="auction-ststus-badges"]/app-auction-status/div[1]/a'
     )
-    button_element.click()
+    try:
+        button_element.click()
+    except ElementClickInterceptedException:
+        dismiss_popup(driver)
+        button_element.click()
 
 
 def navigate_by_search_term(driver: webdriver, search_term: str) -> None:
     """Redirects driver to keyword results page"""
+    # TODO reset input field before input
     driver.implicitly_wait(5)
     input_element = driver.find_element(By.XPATH, SEARCH_XPATH)
     input_element.send_keys(search_term)
@@ -165,14 +175,25 @@ def get_categoric_listings(driver: webdriver, categories: list[str]) -> dict:
     return categoric_listings
 
 
+def get_listings_by_job(
+    driver: webdriver, job_config: dict[str, list[str]]
+) -> dict[str, dict[str, list[str]]]:
+    """Gets all listings by configuration in the job"""
+    all_listings: dict = {}
+    all_listings |= get_categoric_listings(driver, job_config["categories"])
+    navigate_to_auction_page(driver)
+    all_listings |= get_keyword_listings(driver, job_config["keywords"])
+    return all_listings
+
+
 def main():
     """Runs web session"""
     driver = create_driver()
-    driver.get(ROOT_URL)
     navigate_to_auction_page(driver)
-    driver.implicitly_wait(5)
+    lot_details: dict = get_listings_by_job(driver, JOB_DICT)
+    # driver.implicitly_wait(5)
     # lot_details = get_categoric_listings(driver, JOB_DICT["categories"])
-    lot_details = get_keyword_listings(driver, JOB_DICT['keywords'])
+    # lot_details = get_keyword_listings(driver, JOB_DICT['keywords'])
     # navigate_by_search_term(driver, "chair")
     # navigate_by_category(driver, TOP_LEVEL_CATEGORIES[9])
     # driver.implicitly_wait(5)
