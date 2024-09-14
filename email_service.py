@@ -78,11 +78,11 @@ def generate_message_html(listings_details: dict) -> str:
 
     html_body.insert(
         0,
-        "<html><body><h1>Links!</h1><p>"
-        "Included are links to Reno Public Auction categories and keywords "
-        "you subscribed to.</p>",
+        "".join(("<html><body><h1>Links!</h1><p>",
+        "Included are links to Reno Public Auction categories and keywords ",
+        "you subscribed to.</p>"))
     )
-    html_body.insert(-1, "</body></html>")
+    html_body.insert(len(html_body), "</body></html>")
 
     # use this if "category" and "keyword" sections are specified
     # for high_level_group, subgroup in listings_details.items():
