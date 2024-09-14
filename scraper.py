@@ -2,6 +2,7 @@
 
 import json
 import re
+import sys
 
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
@@ -90,7 +91,6 @@ def navigate_by_category(driver: webdriver, category: str) -> None:
     select: Select = Select(select_element)
     category_index = get_dropdown_index(select.options, category)
     select.select_by_value(f"{category_index}: Object")
-    # select.select_by_index(category_index)
 
 
 def get_dropdown_index(dropdown_options: list, category: str) -> int:
@@ -100,7 +100,7 @@ def get_dropdown_index(dropdown_options: list, category: str) -> int:
     top_level_dropdown_options = [
         re.sub(r"\d", "", option.text.replace(" (", "").replace(")", ""))
         for option in dropdown_options
-    ]  # try element.text for matching
+    ]
     return top_level_dropdown_options.index(category)
 
 
@@ -186,10 +186,26 @@ def get_listings_by_job(
     return all_listings
 
 
+def read_config(fname: str) -> dict:
+    """Reads in configuration dictionary for web scraping job"""
+    with open(fname, "r", encoding="utf-8") as json_file:
+        return json.load(json_file)
+
+
 def main():
     """Runs web session"""
-    driver = create_driver()
-    lot_details: dict = get_listings_by_job(driver, JOB_DICT)
+    job_config: dict
+    if len(sys.argv) > 1:
+        try:
+            job_config = read_config(sys.argv[1])
+        except OSError:
+            print("Cannot read config. Exiting.")
+            sys.exit()
+    else:
+        print("Using file constant dict")
+        job_config = JOB_DICT
+    driver: webdriver = create_driver()
+    lot_details: dict = get_listings_by_job(driver, job_config)
     driver.quit()
     export_listings(lot_details)
 
