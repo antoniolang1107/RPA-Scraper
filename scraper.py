@@ -8,7 +8,10 @@ from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+)
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
@@ -54,12 +57,20 @@ JOB_DICT = {
 
 def dismiss_popup(driver: webdriver) -> None:
     """Clicks popup to dismiss"""
-    button_element = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable(
-            (By.CSS_SELECTOR, f"button[class='{DISMISS_BUTTON_CLASS}']")
-        )
+    button_element = driver.find_element(
+        By.CSS_SELECTOR, f"button[class='{DISMISS_BUTTON_CLASS}']"
     )
-    button_element.click()
+    try:
+        button_element = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(button_element)
+        )
+    except ElementNotInteractableException:
+        driver.implicitly_wait(5)
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(button_element)
+        ).click()
+    finally:
+        button_element.click()
 
 
 def navigate_to_auction_page(driver: webdriver) -> None:
