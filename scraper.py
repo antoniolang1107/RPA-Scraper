@@ -16,6 +16,7 @@ LOT_CLASS = (
 )
 
 TOP_LEVEL_CATEGORIES = [
+    "All Categories",
     "Antiques & Collectables",
     "Business & Industrial",
     "Cars & Vehicles",
@@ -67,10 +68,9 @@ def get_dropdown_index(dropdown_options: list, category: str) -> int:
     # TODO clean string parse implementation
     # remove ' (count)' pattern
     top_level_dropdown_options = [
-        re.sub(r"\d", "", str(option).replace(" (", "").replace(")", ""))
+        re.sub(r"\d", "", option.text.replace(" (", "").replace(")", ""))
         for option in dropdown_options
     ]  # try element.text for matching
-    print(top_level_dropdown_options)
     return top_level_dropdown_options.index(category)
 
 
@@ -117,9 +117,9 @@ def main():
     driver.get(ROOT_URL)
     navigate_to_auction_page(driver)
     driver.implicitly_wait(5)
-    navigate_by_search_term(driver, "chair")
+    # navigate_by_search_term(driver, "chair")
+    navigate_by_category(driver, TOP_LEVEL_CATEGORIES[4])
     driver.implicitly_wait(5)
-    # navigate_by_category(driver, TOP_LEVEL_CATEGORIES[3])
     lot_details = get_page_listings(driver)
     # for name, links in lot_details.items():
     #     print(f"Name: {name}")
