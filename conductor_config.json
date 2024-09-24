@@ -1,0 +1,6 @@
+{
+    "0": {
+        "job_recipient_address": "myemail@address.com",
+        "job_config_fname": "job_config.json"
+    }
+}
