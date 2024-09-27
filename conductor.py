@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from email_service import gmail_authenticate, send_message, generate_message_html
 from scraper import run_job, read_config
 
-load_dotenv()
+load_dotenv(override=True)
 receiver_email: str = os.environ["RECEIVER_ADDRESS"]
 conductor_config_fname: str = os.environ["CONDUCTOR_CONFIG_FNAME"]
 
